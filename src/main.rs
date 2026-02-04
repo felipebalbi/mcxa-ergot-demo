@@ -60,6 +60,9 @@ async fn main(spawner: Spawner) {
     // Listen to new temperature reports
     spawner.spawn(temperature_listener().unwrap());
 
+    // REVISIT: what's the correct way to synchronize these services?
+    embassy_time::Timer::after_millis(100).await;
+
     // Sample temperature sensor
     spawner.spawn(tmp108_worker("RED", tmp).unwrap());
 
