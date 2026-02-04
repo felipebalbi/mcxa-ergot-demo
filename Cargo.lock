@@ -412,9 +412,9 @@ checksum = "48c757948c5ede0e46177b7add2e67155f70e33c07fea8284df6576da70b3719"
 [[package]]
 name = "embassy-embedded-hal"
 version = "0.5.0"
-source = "git+https://github.com/felipebalbi/embassy?branch=mcxa%2Fergot-demo#a098af5687f5caa49d1e1d79c21c4fe4c70c3559"
+source = "git+https://github.com/embassy-rs/embassy#98088769b315a6b319c9d2b38c9e58d9eb4fe0ec"
 dependencies = [
- "embassy-futures 0.1.2 (git+https://github.com/felipebalbi/embassy?branch=mcxa%2Fergot-demo)",
+ "embassy-futures 0.1.2 (git+https://github.com/embassy-rs/embassy)",
  "embassy-hal-internal",
  "embassy-sync",
  "embedded-hal 0.2.7",
@@ -428,7 +428,7 @@ dependencies = [
 [[package]]
 name = "embassy-executor"
 version = "0.9.1"
-source = "git+https://github.com/felipebalbi/embassy?branch=mcxa%2Fergot-demo#a098af5687f5caa49d1e1d79c21c4fe4c70c3559"
+source = "git+https://github.com/embassy-rs/embassy#98088769b315a6b319c9d2b38c9e58d9eb4fe0ec"
 dependencies = [
  "cordyceps",
  "cortex-m",
@@ -441,7 +441,7 @@ dependencies = [
 [[package]]
 name = "embassy-executor-macros"
 version = "0.7.0"
-source = "git+https://github.com/felipebalbi/embassy?branch=mcxa%2Fergot-demo#a098af5687f5caa49d1e1d79c21c4fe4c70c3559"
+source = "git+https://github.com/embassy-rs/embassy#98088769b315a6b319c9d2b38c9e58d9eb4fe0ec"
 dependencies = [
  "darling",
  "proc-macro2",
@@ -452,7 +452,7 @@ dependencies = [
 [[package]]
 name = "embassy-executor-timer-queue"
 version = "0.1.0"
-source = "git+https://github.com/felipebalbi/embassy?branch=mcxa%2Fergot-demo#a098af5687f5caa49d1e1d79c21c4fe4c70c3559"
+source = "git+https://github.com/embassy-rs/embassy#98088769b315a6b319c9d2b38c9e58d9eb4fe0ec"
 
 [[package]]
 name = "embassy-futures"
@@ -463,12 +463,12 @@ checksum = "dc2d050bdc5c21e0862a89256ed8029ae6c290a93aecefc73084b3002cdebb01"
 [[package]]
 name = "embassy-futures"
 version = "0.1.2"
-source = "git+https://github.com/felipebalbi/embassy?branch=mcxa%2Fergot-demo#a098af5687f5caa49d1e1d79c21c4fe4c70c3559"
+source = "git+https://github.com/embassy-rs/embassy#98088769b315a6b319c9d2b38c9e58d9eb4fe0ec"
 
 [[package]]
 name = "embassy-hal-internal"
 version = "0.4.0"
-source = "git+https://github.com/felipebalbi/embassy?branch=mcxa%2Fergot-demo#a098af5687f5caa49d1e1d79c21c4fe4c70c3559"
+source = "git+https://github.com/embassy-rs/embassy#98088769b315a6b319c9d2b38c9e58d9eb4fe0ec"
 dependencies = [
  "cortex-m",
  "critical-section",
@@ -478,7 +478,7 @@ dependencies = [
 [[package]]
 name = "embassy-mcxa"
 version = "0.1.0"
-source = "git+https://github.com/felipebalbi/embassy?branch=mcxa%2Fergot-demo#a098af5687f5caa49d1e1d79c21c4fe4c70c3559"
+source = "git+https://github.com/embassy-rs/embassy#98088769b315a6b319c9d2b38c9e58d9eb4fe0ec"
 dependencies = [
  "cortex-m",
  "cortex-m-rt",
@@ -508,7 +508,7 @@ dependencies = [
 [[package]]
 name = "embassy-sync"
 version = "0.7.2"
-source = "git+https://github.com/felipebalbi/embassy?branch=mcxa%2Fergot-demo#a098af5687f5caa49d1e1d79c21c4fe4c70c3559"
+source = "git+https://github.com/embassy-rs/embassy#98088769b315a6b319c9d2b38c9e58d9eb4fe0ec"
 dependencies = [
  "cfg-if",
  "critical-section",
@@ -521,7 +521,7 @@ dependencies = [
 [[package]]
 name = "embassy-time"
 version = "0.5.0"
-source = "git+https://github.com/felipebalbi/embassy?branch=mcxa%2Fergot-demo#a098af5687f5caa49d1e1d79c21c4fe4c70c3559"
+source = "git+https://github.com/embassy-rs/embassy#98088769b315a6b319c9d2b38c9e58d9eb4fe0ec"
 dependencies = [
  "cfg-if",
  "critical-section",
@@ -537,7 +537,7 @@ dependencies = [
 [[package]]
 name = "embassy-time-driver"
 version = "0.2.1"
-source = "git+https://github.com/felipebalbi/embassy?branch=mcxa%2Fergot-demo#a098af5687f5caa49d1e1d79c21c4fe4c70c3559"
+source = "git+https://github.com/embassy-rs/embassy#98088769b315a6b319c9d2b38c9e58d9eb4fe0ec"
 dependencies = [
  "document-features",
 ]
@@ -545,7 +545,7 @@ dependencies = [
 [[package]]
 name = "embassy-time-queue-utils"
 version = "0.3.0"
-source = "git+https://github.com/felipebalbi/embassy?branch=mcxa%2Fergot-demo#a098af5687f5caa49d1e1d79c21c4fe4c70c3559"
+source = "git+https://github.com/embassy-rs/embassy#98088769b315a6b319c9d2b38c9e58d9eb4fe0ec"
 dependencies = [
  "embassy-executor-timer-queue",
  "heapless 0.9.2",

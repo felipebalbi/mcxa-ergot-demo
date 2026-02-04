@@ -13,12 +13,12 @@ crc                  = "3.4.0"
 critical-section     = "1.2.0"
 defmt                = "1.0"
 defmt-rtt            = "1.0"
-embassy-embedded-hal = { git = "https://github.com/felipebalbi/embassy", branch = "mcxa/ergot-demo" }
-embassy-executor     = { git = "https://github.com/felipebalbi/embassy", branch = "mcxa/ergot-demo", features = ["arch-cortex-m", "executor-interrupt", "executor-thread"] }
-embassy-mcxa         = { git = "https://github.com/felipebalbi/embassy", branch = "mcxa/ergot-demo", features = ["defmt", "unstable-pac"] }
-embassy-sync         = { git = "https://github.com/felipebalbi/embassy", branch = "mcxa/ergot-demo" }
-embassy-time         = { git = "https://github.com/felipebalbi/embassy", branch = "mcxa/ergot-demo", features = ["defmt", "defmt-timestamp-uptime"] }
-embassy-time-driver  = { git = "https://github.com/felipebalbi/embassy", branch = "mcxa/ergot-demo", optional = true }
+embassy-embedded-hal = { git = "https://github.com/embassy-rs/embassy" }
+embassy-executor     = { git = "https://github.com/embassy-rs/embassy", features = ["arch-cortex-m", "executor-interrupt", "executor-thread"] }
+embassy-mcxa         = { git = "https://github.com/embassy-rs/embassy", features = ["defmt", "unstable-pac"] }
+embassy-sync         = { git = "https://github.com/embassy-rs/embassy" }
+embassy-time         = { git = "https://github.com/embassy-rs/embassy", features = ["defmt", "defmt-timestamp-uptime"] }
+embassy-time-driver  = { git = "https://github.com/embassy-rs/embassy", optional = true }
 embedded-hal         = "1.0.0"
 embedded-hal-async   = "1.0.0"
 embedded-io-async    = "0.7.0"
