@@ -1,0 +1,13 @@
+[package]
+name = "shared-icd"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+ergot                = "0.12.0"
+mutex                = { version = "1.0.2", features = ["impl-unsafe-cortex-m-single-core"] }
+static_cell          = "2.1.1"
+
+[profile.release]
+lto = true # better optimizations
+debug = 2  # enough information for defmt/rtt locations

@@ -1,0 +1,15 @@
+[package]
+name = "led-service"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+embedded-hal         = "1.0.0"
+ergot                = "0.12.0"
+mutex                = { version = "1.0.2", features = ["impl-unsafe-cortex-m-single-core"] }
+shared-icd           = { path = "../shared-icd" }
+static_cell          = "2.1.1"
+
+[profile.release]
+lto = true # better optimizations
+debug = 2  # enough information for defmt/rtt locations

@@ -14,13 +14,14 @@ use embassy_mcxa::i3c::controller;
 use embassy_mcxa::i3c::{Async, InterruptHandler};
 use embassy_mcxa::peripherals::I3C0;
 use embassy_time::{Duration, WithTimeout};
-use embedded_hal::digital::{InputPin, OutputPin};
-use embedded_hal::pwm::SetDutyCycle;
-use embedded_hal_async::delay::DelayNs;
+use embedded_hal::digital::InputPin;
 use embedded_hal_async::digital::Wait;
-use embedded_hal_async::i2c::I2c;
-use ergot::{Address, NetStack, endpoint, interface_manager::profiles::null::Null, topic};
+use ergot::{Address, NetStack, interface_manager::profiles::null::Null, topic};
+use led_service::{LedEndpoint, led_service};
 use mutex::raw_impls::cs::CriticalSectionRawMutex;
+use pwm_service::pwm_service;
+use shared_icd::Network;
+use temperature_service::{temperature_service, tmp108_service};
 use tmp108::Tmp108;
 use {defmt_rtt as _, panic_probe as _};
 
@@ -30,7 +31,7 @@ bind_interrupts!(
     }
 );
 
-pub static STACK: NetStack<CriticalSectionRawMutex, Null> = NetStack::new();
+static STACK: Network = NetStack::new();
 
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
@@ -78,7 +79,7 @@ async fn main(spawner: Spawner) {
     embassy_time::Timer::after_millis(100).await;
 
     // Sample temperature sensor
-    spawner.spawn(tmp108_worker("RED", tmp).unwrap());
+    spawner.spawn(tmp108_worker(tmp).unwrap());
 
     // Notify of button presses
     spawner.spawn(button_worker("GREEN", btn).unwrap());
@@ -95,8 +96,8 @@ async fn temperature_listener() {
 }
 
 #[task]
-async fn tmp108_worker(name: &'static str, tmp: Tmp108<controller::I3c<'static, Async>>) {
-    tmp108_service(&STACK, name, tmp, embassy_time::Delay).await
+async fn tmp108_worker(tmp: Tmp108<controller::I3c<'static, Async>>) {
+    tmp108_service(&STACK, tmp, embassy_time::Delay).await
 }
 
 #[task]
@@ -119,99 +120,6 @@ async fn button_worker(name: &'static str, btn: Input<'static>) {
 // The following could be placed on a "services" crate. Or even split
 // among several crates. As long as they know to declare their topics
 // and endpoints accordingly.
-
-// LED service
-endpoint!(LedEndpoint, bool, (), "led/set");
-
-async fn led_service<O: OutputPin>(
-    net_stack: &'static NetStack<CriticalSectionRawMutex, Null>,
-    name: &'static str,
-    mut led: O,
-) -> ! {
-    let socket = net_stack
-        .endpoints()
-        .bounded_server::<LedEndpoint, 2>(Some(name));
-    let socket = pin!(socket);
-    let mut hdl = socket.attach();
-    loop {
-        let _ = hdl
-            .serve(async |on| {
-                if *on {
-                    led.set_low().unwrap();
-                } else {
-                    led.set_high().unwrap();
-                }
-            })
-            .await;
-    }
-}
-
-// PWM service
-endpoint!(PwmEndpoint, (u8, u8), (), "pwm/brightness");
-
-async fn pwm_service<D: SetDutyCycle>(
-    net_stack: &'static NetStack<CriticalSectionRawMutex, Null>,
-    mut red: D,
-    mut blue: D,
-) -> ! {
-    let socket = net_stack.endpoints().bounded_server::<PwmEndpoint, 2>(None);
-    let socket = pin!(socket);
-    let mut hdl = socket.attach();
-    loop {
-        let _ = hdl
-            .serve(async |(r, b)| {
-                red.set_duty_cycle_percent(*r).unwrap();
-                blue.set_duty_cycle_percent(*b).unwrap();
-            })
-            .await;
-    }
-}
-
-// Temperature service
-
-topic!(TemperatureTopic, f32, "temperature/latest");
-
-async fn temperature_service(net_stack: &'static NetStack<CriticalSectionRawMutex, Null>) -> ! {
-    let recv = net_stack
-        .topics()
-        .bounded_receiver::<TemperatureTopic, 3>(None);
-    let recv = pin!(recv);
-    let mut recv = recv.subscribe();
-
-    loop {
-        let msg = recv.recv().await;
-        defmt::info!("Temperature {=f32}C", msg.t);
-    }
-}
-
-async fn tmp108_service<I2C: I2c, DELAY: DelayNs>(
-    net_stack: &'static NetStack<CriticalSectionRawMutex, Null>,
-    _name: &'static str,
-    mut tmp: Tmp108<I2C>,
-    mut delay: DELAY,
-) -> ! {
-    let client = net_stack
-        .endpoints()
-        .client::<PwmEndpoint>(Address::unknown(), None);
-    loop {
-        let temperature = tmp.temperature().await.unwrap();
-        let _ = net_stack
-            .topics()
-            .broadcast::<TemperatureTopic>(&temperature, None);
-
-        // Convert to LED brightness
-        let mut temperature = temperature.clamp(18.0, 35.0);
-        temperature -= 18.0;
-        temperature /= 17.0;
-        temperature *= 100.0;
-
-        client
-            .request(&(temperature as u8, (100.0 - temperature) as u8))
-            .await
-            .unwrap();
-        delay.delay_ms(250).await;
-    }
-}
 
 // Button service
 
