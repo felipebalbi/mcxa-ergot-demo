@@ -8,9 +8,9 @@ use embassy_mcxa::bind_interrupts;
 use embassy_mcxa::clocks::config::Div8;
 use embassy_mcxa::config::Config;
 use embassy_mcxa::gpio::{DriveStrength, Input, Level, Output, Pull, SlewRate};
-use embassy_mcxa::i2c::Async;
-use embassy_mcxa::i2c::controller::{self, InterruptHandler, Speed};
-use embassy_mcxa::peripherals::LPI2C2;
+use embassy_mcxa::i3c::controller;
+use embassy_mcxa::i3c::{Async, InterruptHandler};
+use embassy_mcxa::peripherals::I3C0;
 use embassy_time::{Duration, WithTimeout};
 use embedded_hal::digital::{InputPin, OutputPin};
 use embedded_hal_async::delay::DelayNs;
@@ -23,7 +23,7 @@ use {defmt_rtt as _, panic_probe as _};
 
 bind_interrupts!(
     struct Irqs {
-        LPI2C2 => InterruptHandler<LPI2C2>;
+        I3C0 => InterruptHandler<I3C0>;
     }
 );
 
@@ -40,10 +40,9 @@ async fn main(spawner: Spawner) {
 
     let btn = Input::new(p.P1_7, Pull::Disabled);
 
-    let mut config = controller::Config::default();
-    config.speed = Speed::Standard;
-    let i2c = controller::I2c::new_async(p.LPI2C2, p.P1_9, p.P1_8, Irqs, config).unwrap();
-    let tmp = Tmp108::new_with_a0_gnd(i2c);
+    let config = controller::Config::default();
+    let i3c = controller::I3c::new_async(p.I3C0, p.P1_9, p.P1_8, Irqs, config).unwrap();
+    let tmp = Tmp108::new_with_a0_gnd(i3c);
 
     let red = Output::new(p.P3_18, Level::High, DriveStrength::Normal, SlewRate::Fast);
     let green = Output::new(p.P3_19, Level::High, DriveStrength::Normal, SlewRate::Fast);
@@ -81,7 +80,7 @@ async fn temperature_listener() {
 }
 
 #[task]
-async fn tmp108_worker(name: &'static str, tmp: Tmp108<controller::I2c<'static, Async>>) {
+async fn tmp108_worker(name: &'static str, tmp: Tmp108<controller::I3c<'static, Async>>) {
     tmp108_service(&STACK, name, tmp, embassy_time::Delay).await
 }
 
@@ -159,9 +158,9 @@ async fn tmp108_service<I2C: I2c, DELAY: DelayNs>(
         let _ = net_stack
             .topics()
             .broadcast::<TemperatureTopic>(&temperature, None);
-        if temperature > 25.0 {
+        if temperature > 28.0 {
             client.request(&true).await.unwrap();
-        } else if temperature < 22.0 {
+        } else if temperature < 26.0 {
             client.request(&false).await.unwrap();
         } else {
             // do nothing
