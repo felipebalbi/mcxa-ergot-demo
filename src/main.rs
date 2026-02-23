@@ -7,12 +7,15 @@ use embassy_executor::{Spawner, task};
 use embassy_mcxa::bind_interrupts;
 use embassy_mcxa::clocks::config::Div8;
 use embassy_mcxa::config::Config;
+use embassy_mcxa::ctimer::CTimer;
+use embassy_mcxa::ctimer::pwm::{DualPwm, Pwm};
 use embassy_mcxa::gpio::{DriveStrength, Input, Level, Output, Pull, SlewRate};
 use embassy_mcxa::i3c::controller;
 use embassy_mcxa::i3c::{Async, InterruptHandler};
 use embassy_mcxa::peripherals::I3C0;
 use embassy_time::{Duration, WithTimeout};
 use embedded_hal::digital::{InputPin, OutputPin};
+use embedded_hal::pwm::SetDutyCycle;
 use embedded_hal_async::delay::DelayNs;
 use embedded_hal_async::digital::Wait;
 use embedded_hal_async::i2c::I2c;
@@ -44,11 +47,23 @@ async fn main(spawner: Spawner) {
     let i3c = controller::I3c::new_async(p.I3C0, p.P1_9, p.P1_8, Irqs, config).unwrap();
     let tmp = Tmp108::new_with_a0_gnd(i3c);
 
-    let red = Output::new(p.P3_18, Level::High, DriveStrength::Normal, SlewRate::Fast);
+    let ctimer = CTimer::new(p.CTIMER2, Default::default()).unwrap();
+    let pwm = DualPwm::new(
+        ctimer,
+        p.CTIMER2_CH0,
+        p.CTIMER2_CH3,
+        p.CTIMER2_CH2,
+        p.P3_18,
+        p.P3_21,
+        Default::default(),
+    )
+    .unwrap();
+    let (red, blue) = pwm.split();
+
     let green = Output::new(p.P3_19, Level::High, DriveStrength::Normal, SlewRate::Fast);
 
     // Control LEDs
-    spawner.spawn(led_server("RED", red).unwrap());
+    spawner.spawn(pwm_server(red, blue).unwrap());
     spawner.spawn(led_server("GREEN", green).unwrap());
 
     // Listen to button presses
@@ -84,9 +99,14 @@ async fn tmp108_worker(name: &'static str, tmp: Tmp108<controller::I3c<'static, 
     tmp108_service(&STACK, name, tmp, embassy_time::Delay).await
 }
 
-#[task(pool_size = 2)]
+#[task]
 async fn led_server(name: &'static str, led: Output<'static>) {
     led_service(&STACK, name, led).await
+}
+
+#[task]
+async fn pwm_server(red: Pwm<'static>, blue: Pwm<'static>) {
+    pwm_service(&STACK, red, blue).await
 }
 
 #[task]
@@ -116,12 +136,32 @@ async fn led_service<O: OutputPin>(
     loop {
         let _ = hdl
             .serve(async |on| {
-                defmt::info!("{=str} set {=bool}", name, *on);
                 if *on {
                     led.set_low().unwrap();
                 } else {
                     led.set_high().unwrap();
                 }
+            })
+            .await;
+    }
+}
+
+// PWM service
+endpoint!(PwmEndpoint, (u8, u8), (), "pwm/brightness");
+
+async fn pwm_service<D: SetDutyCycle>(
+    net_stack: &'static NetStack<CriticalSectionRawMutex, Null>,
+    mut red: D,
+    mut blue: D,
+) -> ! {
+    let socket = net_stack.endpoints().bounded_server::<PwmEndpoint, 2>(None);
+    let socket = pin!(socket);
+    let mut hdl = socket.attach();
+    loop {
+        let _ = hdl
+            .serve(async |(r, b)| {
+                red.set_duty_cycle_percent(*r).unwrap();
+                blue.set_duty_cycle_percent(*b).unwrap();
             })
             .await;
     }
@@ -146,26 +186,29 @@ async fn temperature_service(net_stack: &'static NetStack<CriticalSectionRawMute
 
 async fn tmp108_service<I2C: I2c, DELAY: DelayNs>(
     net_stack: &'static NetStack<CriticalSectionRawMutex, Null>,
-    name: &'static str,
+    _name: &'static str,
     mut tmp: Tmp108<I2C>,
     mut delay: DELAY,
 ) -> ! {
     let client = net_stack
         .endpoints()
-        .client::<LedEndpoint>(Address::unknown(), Some(name));
+        .client::<PwmEndpoint>(Address::unknown(), None);
     loop {
         let temperature = tmp.temperature().await.unwrap();
         let _ = net_stack
             .topics()
             .broadcast::<TemperatureTopic>(&temperature, None);
-        if temperature > 28.0 {
-            client.request(&true).await.unwrap();
-        } else if temperature < 26.0 {
-            client.request(&false).await.unwrap();
-        } else {
-            // do nothing
-        }
 
+        // Convert to LED brightness
+        let mut temperature = temperature.clamp(18.0, 35.0);
+        temperature -= 18.0;
+        temperature /= 17.0;
+        temperature *= 100.0;
+
+        client
+            .request(&(temperature as u8, (100.0 - temperature) as u8))
+            .await
+            .unwrap();
         delay.delay_ms(250).await;
     }
 }
