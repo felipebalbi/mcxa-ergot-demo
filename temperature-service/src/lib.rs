@@ -3,11 +3,10 @@
 use core::pin::pin;
 
 use embedded_hal_async::delay::DelayNs;
-use embedded_hal_async::i2c::I2c;
+use embedded_sensors_hal_async::temperature::TemperatureSensor;
 use ergot::{Address, topic};
 use pwm_service::PwmEndpoint;
 use shared_icd::Network;
-use tmp108::Tmp108;
 
 topic!(TemperatureTopic, f32, "temperature/latest");
 
@@ -24,16 +23,16 @@ pub async fn temperature_service(net_stack: &'static Network) -> ! {
     }
 }
 
-pub async fn tmp108_service<I2C: I2c, DELAY: DelayNs>(
+pub async fn thermal_sensor_service<T: TemperatureSensor, DELAY: DelayNs>(
     net_stack: &'static Network,
-    mut tmp: Tmp108<I2C>,
+    mut sensor: T,
     mut delay: DELAY,
 ) -> ! {
     let client = net_stack
         .endpoints()
         .client::<PwmEndpoint>(Address::unknown(), None);
     loop {
-        let temperature = tmp.temperature().await.unwrap();
+        let temperature = sensor.temperature().await.unwrap();
         let _ = net_stack
             .topics()
             .broadcast::<TemperatureTopic>(&temperature, None);

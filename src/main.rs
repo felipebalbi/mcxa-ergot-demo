@@ -21,7 +21,7 @@ use led_service::{LedEndpoint, led_service};
 use mutex::raw_impls::cs::CriticalSectionRawMutex;
 use pwm_service::pwm_service;
 use shared_icd::Network;
-use temperature_service::{temperature_service, tmp108_service};
+use temperature_service::{temperature_service, thermal_sensor_service};
 use tmp108::Tmp108;
 use {defmt_rtt as _, panic_probe as _};
 
@@ -97,7 +97,7 @@ async fn temperature_listener() {
 
 #[task]
 async fn tmp108_worker(tmp: Tmp108<controller::I3c<'static, Async>>) {
-    tmp108_service(&STACK, tmp, embassy_time::Delay).await
+    thermal_sensor_service(&STACK, tmp, embassy_time::Delay).await
 }
 
 #[task]

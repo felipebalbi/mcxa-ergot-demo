@@ -32,7 +32,7 @@ rand_core            = "0.9"
 shared-icd           = { path = "shared-icd" }
 static_cell          = "2.1.1"
 temperature-service  = { path = "temperature-service" }
-tmp108               = { version = "0.4.0", features = ["async"] }
+tmp108               = { version = "0.4.0", features = ["async", "embedded-sensors-hal-async"] }
 
 [profile.release]
 lto = true # better optimizations
